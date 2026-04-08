@@ -5,11 +5,59 @@ import type { NoteEntry, NoteColor, DateRange } from '@/types';
 import { buildNoteKey, labelFromNoteKey } from '@/lib/dateUtils';
 
 const STORAGE_KEY = 'wall-calendar-notes-v1';
+let memoryFallbackNotes: NoteEntry[] = [];
+
+type StorageMode = 'local' | 'session' | 'memory';
+
+function resolveStorageMode(): StorageMode {
+  if (typeof window === 'undefined') return 'memory';
+
+  try {
+    const probeKey = `${STORAGE_KEY}-probe`;
+    localStorage.setItem(probeKey, '1');
+    localStorage.removeItem(probeKey);
+    return 'local';
+  } catch {
+    try {
+      const probeKey = `${STORAGE_KEY}-probe`;
+      sessionStorage.setItem(probeKey, '1');
+      sessionStorage.removeItem(probeKey);
+      return 'session';
+    } catch {
+      return 'memory';
+    }
+  }
+}
+
+function readFromStorage(mode: StorageMode): string | null {
+  if (mode === 'local') return localStorage.getItem(STORAGE_KEY);
+  if (mode === 'session') return sessionStorage.getItem(STORAGE_KEY);
+  return JSON.stringify(memoryFallbackNotes);
+}
+
+function writeToStorage(mode: StorageMode, payload: string): boolean {
+  try {
+    if (mode === 'local') {
+      localStorage.setItem(STORAGE_KEY, payload);
+      return true;
+    }
+    if (mode === 'session') {
+      sessionStorage.setItem(STORAGE_KEY, payload);
+      return true;
+    }
+
+    memoryFallbackNotes = JSON.parse(payload) as NoteEntry[];
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function loadNotes(): NoteEntry[] {
   if (typeof window === 'undefined') return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const mode = resolveStorageMode();
+    const raw = readFromStorage(mode);
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed)
       ? parsed.map((note) => ({
@@ -24,12 +72,8 @@ function loadNotes(): NoteEntry[] {
 }
 
 function saveNotes(notes: NoteEntry[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
-    return true;
-  } catch {
-    return false;
-  }
+  const mode = resolveStorageMode();
+  return writeToStorage(mode, JSON.stringify(notes));
 }
 
 export function useNotes(range: DateRange, currentDate: Date) {
