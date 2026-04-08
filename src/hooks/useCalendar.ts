@@ -72,6 +72,12 @@ export function useCalendar() {
     setHoverDate(null);
   }, []);
 
+  const jumpToDate = useCallback((date: Date) => {
+    setCurrentDate(new Date(date.getFullYear(), date.getMonth(), 1));
+    setRange({ start: date, end: null });
+    setHoverDate(null);
+  }, []);
+
   return {
     currentDate,
     animDir,
@@ -83,5 +89,6 @@ export function useCalendar() {
     goToMonth,
     handleDayClick,
     resetRange,
+    jumpToDate,
   };
 }

@@ -47,6 +47,10 @@ body {
   animation: mood-orb-float 6s ease-in-out infinite;
 }
 
+.month-quote-animate {
+  animation: month-quote-fade 360ms ease-out;
+}
+
 @keyframes hero-ambient {
   0%, 100% { transform: translateY(0px) scale(1); opacity: 0.55; }
   50% { transform: translateY(-3px) scale(1.01); opacity: 0.85; }
@@ -63,6 +67,19 @@ body {
   }
   50% {
     transform: translateY(-2px) scale(1.015);
+  }
+}
+
+@keyframes month-quote-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+    filter: blur(0.4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
   }
 }
 

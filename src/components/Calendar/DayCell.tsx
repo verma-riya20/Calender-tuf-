@@ -1,5 +1,5 @@
 'use client';
-import { memo } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import type { CalendarDay, MonthTheme, HolidayEntry } from '@/types';
 import type { DayRangeState } from '@/lib/dateUtils';
@@ -19,6 +19,9 @@ interface DayCellProps {
 const DayCell = memo(function DayCell({
   day, rangeState, holiday, hasNote, theme, colIndex, onClick, onMouseEnter, onMouseLeave,
 }: DayCellProps) {
+  const [showHolidayTip, setShowHolidayTip] = useState(false);
+  const cellRef = useRef<HTMLDivElement | null>(null);
+  const tipTimerRef = useRef<number | null>(null);
   const { date, dayOfMonth, isCurrentMonth, isToday } = day;
 
   const isStart      = rangeState === 'start' || rangeState === 'start-end';
@@ -28,6 +31,57 @@ const DayCell = memo(function DayCell({
   const isHoverRange = rangeState === 'hover-range';
   const isSelected   = isStart || isEnd;
 
+  useEffect(() => {
+    return () => {
+      if (tipTimerRef.current) {
+        window.clearTimeout(tipTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!showHolidayTip) return;
+
+    function handleOutsidePointerDown(event: PointerEvent) {
+      if (!cellRef.current) return;
+      const target = event.target as Node | null;
+      if (target && !cellRef.current.contains(target)) {
+        setShowHolidayTip(false);
+        if (tipTimerRef.current) {
+          window.clearTimeout(tipTimerRef.current);
+          tipTimerRef.current = null;
+        }
+      }
+    }
+
+    document.addEventListener('pointerdown', handleOutsidePointerDown, true);
+    return () => {
+      document.removeEventListener('pointerdown', handleOutsidePointerDown, true);
+    };
+  }, [showHolidayTip]);
+
+  function showHolidayTooltipTemporarily() {
+    if (!holiday || !isCurrentMonth) return;
+
+    if (showHolidayTip) {
+      setShowHolidayTip(false);
+      if (tipTimerRef.current) {
+        window.clearTimeout(tipTimerRef.current);
+        tipTimerRef.current = null;
+      }
+      return;
+    }
+
+    setShowHolidayTip(true);
+    if (tipTimerRef.current) {
+      window.clearTimeout(tipTimerRef.current);
+    }
+    tipTimerRef.current = window.setTimeout(() => {
+      setShowHolidayTip(false);
+      tipTimerRef.current = null;
+    }, 1400);
+  }
+
   // Range bar rounding
   const isRangeSegment = isInRange || isHoverRange;
   const roundLeft  = isRangeSegment && colIndex === 0;
@@ -35,11 +89,13 @@ const DayCell = memo(function DayCell({
 
   return (
     <div
+      ref={cellRef}
       role="button"
       tabIndex={isCurrentMonth ? 0 : -1}
       aria-label={`${dayOfMonth}${holiday ? `, ${holiday.name}` : ''}`}
       aria-pressed={isSelected}
       onClick={() => isCurrentMonth && onClick(date)}
+      onTouchStart={() => showHolidayTooltipTemporarily()}
       onMouseEnter={() => onMouseEnter(date)}
       onMouseLeave={onMouseLeave}
       onKeyDown={(e) => e.key === 'Enter' && isCurrentMonth && onClick(date)}
@@ -123,7 +179,10 @@ const DayCell = memo(function DayCell({
       {/* Holiday name tooltip */}
       {holiday && isCurrentMonth && (
         <span
-          className="pointer-events-none absolute left-1/2 top-1 z-20 -translate-x-1/2 -translate-y-full rounded-md border px-2 py-1 text-[9px] opacity-0 transition-opacity duration-150 whitespace-nowrap group-hover:opacity-100 group-focus-within:opacity-100"
+          className={clsx(
+            'pointer-events-none absolute left-1/2 top-1 z-20 -translate-x-1/2 -translate-y-full rounded-md border px-2 py-1 text-[9px] transition-opacity duration-150 whitespace-nowrap',
+            showHolidayTip ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100',
+          )}
           style={{
             color: 'rgba(255,255,255,0.92)',
             background: 'rgba(10,10,10,0.88)',

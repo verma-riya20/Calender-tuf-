@@ -1,6 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { format, differenceInCalendarDays, startOfMonth } from 'date-fns';
+import { format, differenceInCalendarDays } from 'date-fns';
 import clsx from 'clsx';
 import type { DateRange, MonthTheme, NoteEntry, NoteColor, NoteFilter } from '@/types';
 import { HOLIDAYS } from '@/lib/constants';
@@ -25,6 +25,9 @@ interface NotesPanelProps {
   }) => boolean;
   onDelete: (id: string) => void;
   onClearSaveError: () => void;
+  focusMode: boolean;
+  onToggleFocusMode: () => void;
+  onHolidayJump: (day: number) => void;
 }
 
 export function NotesPanel({
@@ -39,14 +42,14 @@ export function NotesPanel({
   onSave,
   onDelete,
   onClearSaveError,
+  focusMode,
+  onToggleFocusMode,
+  onHolidayJump,
 }: NotesPanelProps) {
   const [filter, setFilter] = useState<NoteFilter>('all');
-  const defaultMonthDate = startOfMonth(currentDate);
-  const focusDate = range.start ?? defaultMonthDate;
   const selectionStatus = getSelectionStatus(range);
   const filteredNotes = useMemo(() => applyFilter(monthNotes, filter), [monthNotes, filter]);
   const monthHolidays = useMemo(() => getMonthHolidays(currentDate), [currentDate]);
-  const selectedDays = useMemo(() => getSelectedDayCount(range), [range]);
   const counts = useMemo(() => ({
     all: monthNotes.length,
     pinned: monthNotes.filter((note) => note.pinned).length,
@@ -56,7 +59,7 @@ export function NotesPanel({
 
   return (
     <div
-      className="flex flex-col gap-5 h-full p-5 overflow-y-auto custom-scrollbar"
+      className="relative flex flex-col gap-5 h-full p-5 overflow-y-auto custom-scrollbar"
       style={{ borderLeft: '1px solid rgba(255,255,255,0.06)' }}
     >
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
@@ -100,7 +103,8 @@ export function NotesPanel({
               Month Story
             </div>
             <p
-              className="mt-1 text-[12px] leading-relaxed"
+              key={`${currentDate.getFullYear()}-${currentDate.getMonth()}`}
+              className="month-quote-animate mt-1 text-[12px] leading-relaxed"
               style={{
                 color: 'rgba(240,236,228,0.72)',
                 fontFamily: 'var(--font-display)',
@@ -193,7 +197,8 @@ export function NotesPanel({
       )}
 
       {monthNotes.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
           {FILTERS.map((option) => {
             const active = filter === option.key;
             return (
@@ -215,6 +220,22 @@ export function NotesPanel({
               </button>
             );
           })}
+          </div>
+          <button
+            type="button"
+            onClick={onToggleFocusMode}
+            className="px-2.5 py-1 rounded-full text-[10px] border transition-all duration-150"
+            style={{
+              background: focusMode ? `${theme.accent}22` : 'rgba(255,255,255,0.03)',
+              color: focusMode ? theme.accentText : 'rgba(240,236,228,0.5)',
+              borderColor: focusMode ? `${theme.accent}50` : 'rgba(255,255,255,0.08)',
+              fontFamily: 'var(--font-body)',
+            }}
+            aria-pressed={focusMode}
+            title="Dim non-selected weeks"
+          >
+            Focus {focusMode ? 'On' : 'Off'}
+          </button>
         </div>
       )}
 
@@ -235,8 +256,10 @@ export function NotesPanel({
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {monthHolidays.map((holiday) => (
-                  <span
+                  <button
+                    type="button"
                     key={holiday.key}
+                    onClick={() => onHolidayJump(holiday.day)}
                     className="px-2 py-1 rounded-full border text-[10px]"
                     style={{
                       background: `${theme.accent}16`,
@@ -244,10 +267,10 @@ export function NotesPanel({
                       color: theme.accentText,
                       fontFamily: 'var(--font-body)',
                     }}
-                    title={holiday.type}
+                    title={`Jump to ${holiday.name}`}
                   >
                     {holiday.day} · {holiday.name}
-                  </span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -295,12 +318,6 @@ function getSelectionStatus(range: DateRange): string {
   }
 
   return 'No date range selected.';
-}
-
-function getSelectedDayCount(range: DateRange) {
-  if (!range.start) return 0;
-  if (!range.end) return 1;
-  return Math.abs(differenceInCalendarDays(range.end, range.start)) + 1;
 }
 
 function getMonthHolidays(date: Date) {

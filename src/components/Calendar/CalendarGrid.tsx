@@ -14,16 +14,37 @@ interface CalendarGridProps {
   theme: MonthTheme;
   noteKeys: Set<string>;
   animDir: 'left' | 'right' | null;
+  focusMode: boolean;
   onDayClick: (date: Date) => void;
   onDayHover: (date: Date) => void;
   onDayLeave: () => void;
 }
 
 export function CalendarGrid({
-  currentDate, range, hoverDate, theme, noteKeys, animDir,
+  currentDate, range, hoverDate, theme, noteKeys, animDir, focusMode,
   onDayClick, onDayHover, onDayLeave,
 }: CalendarGridProps) {
   const grid = useMemo(() => buildCalendarGrid(currentDate), [currentDate]);
+  const rows = useMemo(() => {
+    const split: typeof grid[] = [];
+    for (let i = 0; i < grid.length; i += 7) {
+      split.push(grid.slice(i, i + 7));
+    }
+    return split;
+  }, [grid]);
+
+  const activeRows = useMemo(() => {
+    const set = new Set<number>();
+    grid.forEach((day, index) => {
+      const state = getDayRangeState(day.date, range, hoverDate);
+      if (state !== 'none') {
+        set.add(Math.floor(index / 7));
+      }
+    });
+    return set;
+  }, [grid, range, hoverDate]);
+
+  const shouldDimRows = focusMode && activeRows.size > 0;
 
   return (
     <div
@@ -75,28 +96,38 @@ export function CalendarGrid({
       </div>
 
       {/* Day cells */}
-      <div className="grid grid-cols-7 gap-y-0.5">
-        {grid.map((day, i) => {
-          const holidayKey = `${day.date.getMonth() + 1}-${day.date.getDate()}`;
-          const holiday = HOLIDAYS[holidayKey] ?? null;
-          const noteKey = format(day.date, 'yyyy-MM-dd');
-          const hasNote = noteKeys.has(noteKey);
-          const rangeState = getDayRangeState(day.date, range, hoverDate);
-          const colIndex = i % 7;
+      <div className="flex flex-col gap-y-0.5">
+        {rows.map((row, rowIndex) => {
+          const dimRow = shouldDimRows && !activeRows.has(rowIndex);
 
           return (
-            <DayCell
-              key={day.date.toISOString()}
-              day={day}
-              rangeState={rangeState}
-              holiday={holiday}
-              hasNote={hasNote}
-              theme={theme}
-              colIndex={colIndex}
-              onClick={onDayClick}
-              onMouseEnter={onDayHover}
-              onMouseLeave={onDayLeave}
-            />
+            <div
+              key={`row-${rowIndex}`}
+              className={clsx('grid grid-cols-7 transition-opacity duration-200', dimRow && 'opacity-30')}
+            >
+              {row.map((day, colIndex) => {
+                const holidayKey = `${day.date.getMonth() + 1}-${day.date.getDate()}`;
+                const holiday = HOLIDAYS[holidayKey] ?? null;
+                const noteKey = format(day.date, 'yyyy-MM-dd');
+                const hasNote = noteKeys.has(noteKey);
+                const rangeState = getDayRangeState(day.date, range, hoverDate);
+
+                return (
+                  <DayCell
+                    key={day.date.toISOString()}
+                    day={day}
+                    rangeState={rangeState}
+                    holiday={holiday}
+                    hasNote={hasNote}
+                    theme={theme}
+                    colIndex={colIndex}
+                    onClick={onDayClick}
+                    onMouseEnter={onDayHover}
+                    onMouseLeave={onDayLeave}
+                  />
+                );
+              })}
+            </div>
           );
         })}
       </div>

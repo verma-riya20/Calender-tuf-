@@ -342,13 +342,7 @@ export function NoteEditor({ activeKey, activeNote, theme, onSave, onEdit }: Not
       </p>
 
       {/* Save button */}
-      <div className="flex items-center justify-between">
-        <p
-          className="text-[10px]"
-          style={{ color: 'rgba(240,236,228,0.2)', fontFamily: 'var(--font-body)' }}
-        >
-          ⌘S to save
-        </p>
+      <div className="flex items-center justify-end">
         <button
           onClick={handleSave}
           disabled={!text.trim()}

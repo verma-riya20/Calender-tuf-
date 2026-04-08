@@ -1,7 +1,5 @@
 'use client';
-import { useMemo } from 'react';
-import { format } from 'date-fns';
-import clsx from 'clsx';
+import { useMemo, useState } from 'react';
 import { MONTH_THEMES } from '@/lib/constants';
 import { useCalendar } from '@/hooks/useCalendar';
 import { useNotes } from '@/hooks/useNotes';
@@ -22,7 +20,10 @@ export function WallCalendar() {
     goToMonth,
     handleDayClick,
     resetRange,
+    jumpToDate,
   } = useCalendar();
+
+  const [focusMode, setFocusMode] = useState(false);
 
   const {
     activeNote,
@@ -114,6 +115,7 @@ export function WallCalendar() {
             theme={theme}
             noteKeys={noteKeys}
             animDir={animDir}
+            focusMode={focusMode}
             onDayClick={handleDayClick}
             onDayHover={setHoverDate}
             onDayLeave={() => setHoverDate(null)}
@@ -150,6 +152,11 @@ export function WallCalendar() {
             onSave={upsertNote}
             onDelete={deleteNote}
             onClearSaveError={clearSaveError}
+            focusMode={focusMode}
+            onToggleFocusMode={() => setFocusMode((prev) => !prev)}
+            onHolidayJump={(day) => {
+              jumpToDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
+            }}
           />
         </div>
 
