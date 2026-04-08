@@ -42,7 +42,7 @@ export function MonthStoryCard({
               letterSpacing: '0.01em',
             }}
           >
-            "{theme.quote}"
+            &ldquo;{theme.quote}&rdquo;
           </p>
         </div>
         <div className="flex flex-col items-center gap-1.5">

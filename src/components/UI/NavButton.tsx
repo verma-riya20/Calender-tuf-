@@ -1,5 +1,5 @@
 'use client';
-import { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes } from 'react';
 import clsx from 'clsx';
 
 interface NavButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

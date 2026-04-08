@@ -36,7 +36,7 @@ export function NoteEditor({ activeKey, activeNote, theme, onSave, onEdit }: Not
     setPinned(activeNote?.pinned ?? false);
     setTags(activeNote?.tags ?? []);
     setSaved(false);
-  }, [activeKey]);
+  }, [activeKey, activeNote]);
 
   function saveNow(nextText = text, nextColor = color, nextPinned = pinned, nextTags = tags) {
     if (!nextText.trim()) return false;
