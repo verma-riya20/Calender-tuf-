@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { format } from 'date-fns';
 import type { NoteEntry, NoteColor, DateRange } from '@/types';
 import { buildNoteKey, labelFromNoteKey } from '@/lib/dateUtils';
@@ -36,11 +36,18 @@ export function useNotes(range: DateRange, currentDate: Date) {
   const [notes, setNotes] = useState<NoteEntry[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const notesRef = useRef<NoteEntry[]>([]);
 
   useEffect(() => {
-    setNotes(loadNotes());
+    const loaded = loadNotes();
+    notesRef.current = loaded;
+    setNotes(loaded);
     setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    notesRef.current = notes;
+  }, [notes]);
 
   const activeKey = buildNoteKey(range, currentDate);
 
@@ -54,17 +61,17 @@ export function useNotes(range: DateRange, currentDate: Date) {
       tags: string[];
     }) => {
       const { text, color, pinned, tags } = payload;
-      let didSave = false;
+      const current = notesRef.current;
+      const existing = current.find((n) => n.key === activeKey);
 
-      setNotes((prev) => {
-        const existing = prev.find((n) => n.key === activeKey);
-        let updated: NoteEntry[];
-        if (existing) {
-          updated = prev.map((n) =>
-            n.key === activeKey ? { ...n, text, color, pinned, tags } : n,
-          );
-        } else {
-          const entry: NoteEntry = {
+      let updated: NoteEntry[];
+      if (existing) {
+        updated = current.map((n) =>
+          n.key === activeKey ? { ...n, text, color, pinned, tags } : n,
+        );
+      } else {
+        updated = [
+          {
             id: crypto.randomUUID(),
             key: activeKey,
             label: labelFromNoteKey(activeKey),
@@ -73,38 +80,38 @@ export function useNotes(range: DateRange, currentDate: Date) {
             createdAt: new Date().toISOString(),
             pinned,
             tags,
-          };
-          updated = [entry, ...prev];
-        }
-
-        const filtered = updated.filter((n) => n.text.trim());
-        didSave = saveNotes(filtered);
-        return filtered;
-      });
-
-      if (!didSave) {
-        setSaveError('Could not save note. Storage may be full or unavailable.');
-      } else {
-        setSaveError(null);
+          },
+          ...current,
+        ];
       }
 
-      return didSave;
+      const filtered = updated.filter((n) => n.text.trim());
+      const didSave = saveNotes(filtered);
+      if (!didSave) {
+        setSaveError('Could not save note. Storage may be full or unavailable.');
+        return false;
+      }
+
+      setSaveError(null);
+      notesRef.current = filtered;
+      setNotes(filtered);
+      return true;
     },
     [activeKey],
   );
 
   const deleteNote = useCallback(
     (id: string) => {
-      setNotes((prev) => {
-        const updated = prev.filter((n) => n.id !== id);
-        const didSave = saveNotes(updated);
-        if (!didSave) {
-          setSaveError('Could not delete note. Storage may be unavailable.');
-        } else {
-          setSaveError(null);
-        }
-        return updated;
-      });
+      const updated = notesRef.current.filter((n) => n.id !== id);
+      const didSave = saveNotes(updated);
+      if (!didSave) {
+        setSaveError('Could not delete note. Storage may be unavailable.');
+        return;
+      }
+
+      setSaveError(null);
+      notesRef.current = updated;
+      setNotes(updated);
     },
     [],
   );

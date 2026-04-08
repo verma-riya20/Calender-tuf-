@@ -34,15 +34,17 @@ export function CalendarGrid({
   }, [grid]);
 
   const activeRows = useMemo(() => {
+    if (!range.start || !range.end) return new Set<number>();
+
     const set = new Set<number>();
     grid.forEach((day, index) => {
-      const state = getDayRangeState(day.date, range, hoverDate);
+      const state = getDayRangeState(day.date, range, null);
       if (state !== 'none') {
         set.add(Math.floor(index / 7));
       }
     });
     return set;
-  }, [grid, range, hoverDate]);
+  }, [grid, range]);
 
   const shouldDimRows = focusMode && activeRows.size > 0;
 

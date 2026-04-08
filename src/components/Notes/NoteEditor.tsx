@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import type { NoteColor, NoteEntry, MonthTheme } from '@/types';
 import { NOTE_COLORS } from '@/lib/constants';
 import { labelFromNoteKey } from '@/lib/dateUtils';
+import { TagEditor } from './TagEditor';
 
 interface NoteEditorProps {
   activeKey: string;
@@ -25,10 +26,8 @@ export function NoteEditor({ activeKey, activeNote, theme, onSave, onEdit }: Not
   const [color, setColor] = useState<NoteColor>(activeNote?.color ?? 'default');
   const [pinned, setPinned] = useState(activeNote?.pinned ?? false);
   const [tags, setTags] = useState<string[]>(activeNote?.tags ?? []);
-  const [tagInput, setTagInput] = useState('');
   const [saved, setSaved] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const QUICK_TAGS = ['Work', 'Study', 'Personal', 'Reminder', 'Event'];
 
   // Sync when active note changes (different key selected)
   useEffect(() => {
@@ -36,7 +35,6 @@ export function NoteEditor({ activeKey, activeNote, theme, onSave, onEdit }: Not
     setColor(activeNote?.color ?? 'default');
     setPinned(activeNote?.pinned ?? false);
     setTags(activeNote?.tags ?? []);
-    setTagInput('');
     setSaved(false);
   }, [activeKey]);
 
@@ -70,19 +68,6 @@ export function NoteEditor({ activeKey, activeNote, theme, onSave, onEdit }: Not
         setTimeout(() => setSaved(false), 1800);
       }
     }
-  }
-
-  function addTag(rawTag: string) {
-    const normalized = rawTag.trim();
-    if (!normalized) return;
-    const existing = tags.some((tag) => tag.toLowerCase() === normalized.toLowerCase());
-    if (existing) return;
-    updateTags([...tags, normalized]);
-    setTagInput('');
-  }
-
-  function removeTag(tagToRemove: string) {
-    updateTags(tags.filter((tag) => tag !== tagToRemove));
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -217,122 +202,7 @@ export function NoteEditor({ activeKey, activeNote, theme, onSave, onEdit }: Not
         }}
       />
 
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <span
-            className="text-[9px] tracking-[0.2em] uppercase"
-            style={{ color: 'rgba(240,236,228,0.3)', fontFamily: 'var(--font-body)' }}
-          >
-            Tags
-          </span>
-          <button
-            type="button"
-            onClick={() => updateTags([])}
-            className="text-[10px]"
-            style={{ color: 'rgba(240,236,228,0.35)', fontFamily: 'var(--font-body)' }}
-          >
-            Clear all
-          </button>
-        </div>
-
-        <div className="flex flex-wrap gap-1.5">
-          {tags.length > 0 ? (
-            tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-full border text-[10px]"
-                style={{
-                  background: `${theme.accent}16`,
-                  borderColor: `${theme.accent}38`,
-                  color: theme.accentText,
-                  fontFamily: 'var(--font-body)',
-                }}
-              >
-                #{tag}
-                <button
-                  type="button"
-                  onClick={() => removeTag(tag)}
-                  className="leading-none"
-                  aria-label={`Remove tag ${tag}`}
-                  style={{ color: 'rgba(255,255,255,0.7)' }}
-                >
-                  ×
-                </button>
-              </span>
-            ))
-          ) : (
-            <span
-              className="text-[11px]"
-              style={{ color: 'rgba(240,236,228,0.3)', fontFamily: 'var(--font-body)' }}
-            >
-              No tags yet.
-            </span>
-          )}
-        </div>
-
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={tagInput}
-            onChange={(e) => {
-              setTagInput(e.target.value);
-              setSaved(false);
-              onEdit?.();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                addTag(tagInput);
-              }
-            }}
-            placeholder="Add a tag and press Enter"
-            className="flex-1 rounded-xl border outline-none transition-all duration-200 text-[12px]"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              borderColor: 'rgba(255,255,255,0.08)',
-              color: 'rgba(240,236,228,0.8)',
-              fontFamily: 'var(--font-body)',
-              padding: '10px 12px',
-              caretColor: theme.accent,
-            }}
-          />
-          <button
-            type="button"
-            onClick={() => addTag(tagInput)}
-            className="px-3 rounded-xl border text-[11px]"
-            style={{
-              background: `${theme.accent}18`,
-              color: theme.accentText,
-              borderColor: `${theme.accent}38`,
-              fontFamily: 'var(--font-body)',
-            }}
-          >
-            Add
-          </button>
-        </div>
-
-        <div className="flex flex-wrap gap-1.5">
-          {QUICK_TAGS.map((quickTag) => {
-            const active = tags.some((tag) => tag.toLowerCase() === quickTag.toLowerCase());
-            return (
-              <button
-                type="button"
-                key={quickTag}
-                onClick={() => (active ? removeTag(tags.find((tag) => tag.toLowerCase() === quickTag.toLowerCase()) ?? quickTag) : addTag(quickTag))}
-                className="px-2 py-1 rounded-full border text-[10px] transition-all duration-150"
-                style={{
-                  background: active ? `${theme.accent}22` : 'rgba(255,255,255,0.03)',
-                  color: active ? theme.accentText : 'rgba(240,236,228,0.55)',
-                  borderColor: active ? `${theme.accent}50` : 'rgba(255,255,255,0.08)',
-                  fontFamily: 'var(--font-body)',
-                }}
-              >
-                {active ? `✓ ${quickTag}` : `+ ${quickTag}`}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <TagEditor tags={tags} theme={theme} onChange={updateTags} />
 
       <p
         className="text-[10px] -mt-1"
@@ -344,6 +214,7 @@ export function NoteEditor({ activeKey, activeNote, theme, onSave, onEdit }: Not
       {/* Save button */}
       <div className="flex items-center justify-end">
         <button
+          type="button"
           onClick={handleSave}
           disabled={!text.trim()}
           className={clsx(

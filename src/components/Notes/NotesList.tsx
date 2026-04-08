@@ -20,7 +20,7 @@ export function NotesList({ notes, theme, onDelete }: NotesListProps) {
       >
         All Notes This Month
       </div>
-      <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
+      <div className="flex flex-col gap-2 pr-1 custom-scrollbar max-h-none overflow-visible lg:max-h-[220px] lg:overflow-y-auto">
         {notes.map((note) => {
           const style = NOTE_COLORS[note.color];
           return (

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import type { MonthTheme } from '@/types';
 import type { AnimDirection } from '@/types';
@@ -17,15 +17,6 @@ interface HeroImageProps {
 export function HeroImage({ theme, year, animDir, onPrev, onNext }: HeroImageProps) {
   const [loaded, setLoaded] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
-  const [prevSrc, setPrevSrc] = useState(theme.heroImage);
-
-  useEffect(() => {
-    if (theme.heroImage !== prevSrc) {
-      setLoaded(false);
-      setImageFailed(false);
-      setPrevSrc(theme.heroImage);
-    }
-  }, [theme.heroImage]);
 
   const monthFirstLetter = theme.name.slice(0, 1);
   const monthRest = theme.name.slice(1);
@@ -38,6 +29,7 @@ export function HeroImage({ theme, year, animDir, onPrev, onNext }: HeroImagePro
       {/* Photo */}
       {!imageFailed && (
         <div
+          key={theme.heroImage}
           className={clsx(
             'absolute inset-0 transition-opacity duration-500',
             loaded ? 'opacity-100' : 'opacity-0',

@@ -8,20 +8,25 @@ interface AppErrorBoundaryProps {
 
 interface AppErrorBoundaryState {
   hasError: boolean;
+  errorMessage: string;
 }
 
 export class AppErrorBoundary extends React.Component<
   AppErrorBoundaryProps,
   AppErrorBoundaryState
 > {
-  state: AppErrorBoundaryState = { hasError: false };
+  state: AppErrorBoundaryState = { hasError: false, errorMessage: '' };
 
   static getDerivedStateFromError(): AppErrorBoundaryState {
-    return { hasError: true };
+    return { hasError: true, errorMessage: '' };
   }
 
   componentDidCatch(error: Error) {
-    console.error('Wall calendar render error:', error);
+    this.setState({ errorMessage: error?.message ?? 'Unknown render error' });
+  }
+
+  private resetErrorState = () => {
+    this.setState({ hasError: false, errorMessage: '' });
   }
 
   render() {
@@ -41,6 +46,24 @@ export class AppErrorBoundary extends React.Component<
           <p className="text-sm opacity-90">
             Please refresh the page. If this persists, clear local storage for this site.
           </p>
+          {this.state.errorMessage && (
+            <p className="mt-3 text-xs opacity-80">{this.state.errorMessage}</p>
+          )}
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={this.resetErrorState}
+              className="rounded-md border px-3 py-1.5 text-sm"
+              style={{
+                borderColor: 'rgba(254,226,226,0.4)',
+                color: 'rgba(254,226,226,0.95)',
+                background: 'rgba(255,255,255,0.06)',
+                fontFamily: 'var(--font-body)',
+              }}
+            >
+              Try again
+            </button>
+          </div>
         </section>
       );
     }

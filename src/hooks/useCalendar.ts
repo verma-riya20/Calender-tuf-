@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { addMonths, subMonths, isSameDay } from 'date-fns';
 import type { DateRange, AnimDirection } from '@/types';
 
@@ -9,6 +9,15 @@ export function useCalendar() {
   const [range, setRange] = useState<DateRange>({ start: null, end: null });
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const animTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (animTimerRef.current !== null) {
+        window.clearTimeout(animTimerRef.current);
+      }
+    };
+  }, []);
 
   const navigate = useCallback(
     (dir: 'prev' | 'next') => {
@@ -16,12 +25,13 @@ export function useCalendar() {
       setIsAnimating(true);
       setAnimDir(dir === 'prev' ? 'right' : 'left');
 
-      setTimeout(() => {
+      animTimerRef.current = window.setTimeout(() => {
         setCurrentDate((d) => dir === 'prev' ? subMonths(d, 1) : addMonths(d, 1));
         setAnimDir(null);
         setIsAnimating(false);
         setRange({ start: null, end: null });
         setHoverDate(null);
+        animTimerRef.current = null;
       }, 320);
     },
     [isAnimating],
@@ -37,12 +47,13 @@ export function useCalendar() {
       setIsAnimating(true);
       setAnimDir(dir);
 
-      setTimeout(() => {
+      animTimerRef.current = window.setTimeout(() => {
         setCurrentDate(targetMonth);
         setAnimDir(null);
         setIsAnimating(false);
         setRange({ start: null, end: null });
         setHoverDate(null);
+        animTimerRef.current = null;
       }, 320);
     },
     [currentDate, isAnimating],
