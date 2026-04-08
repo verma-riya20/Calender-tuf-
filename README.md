@@ -135,6 +135,30 @@ npx vercel --prod
 
 ---
 
+## 🛠 Engineering Tradeoffs (Honest Notes)
+
+- I chose `localStorage` over a backend to stay aligned with the assignment scope and keep the app fast to run and review.
+- I prioritized interaction quality (range states, notes UX, responsive behavior) over adding external UI libraries.
+- Hero imagery uses remote assets for variety; a production app would likely cache or self-host these images for tighter control.
+- The current notes model is intentionally simple (month/day/range keys) to keep behavior predictable.
+
+---
+
+## 🔭 What I Would Improve Next
+
+- Add optional export (`PDF`/image) for a selected month or date range.
+- Add lightweight unit tests for range-state logic and note-key generation.
+- Add deep-link support (URL state) so current month/range can be shared.
+- Add optional i18n/date-locale support.
+
+---
+
+## 🙋 Personal Reflection
+
+This project pushed me to balance UI craft with state logic. The hardest part was making range selection states feel intuitive across click, hover, and month transitions while keeping the component structure maintainable. If I had more time, I would focus on test coverage and export/sharing features.
+
+---
+
 ## 📱 Responsive Breakpoints
 
 | Breakpoint | Layout |
