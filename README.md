@@ -26,6 +26,24 @@ A production-ready, portfolio-grade interactive wall calendar built with **Next.
 
 ---
 
+## ✅ Requirement Mapping (Challenge Rubric)
+
+| Requirement from prompt | Implementation evidence |
+|---|---|
+| Wall calendar aesthetic with hero area + date section | `src/components/Layout/WallCalendar.tsx`, `src/components/Calendar/HeroImage.tsx`, `src/components/UI/CalendarBinding.tsx` |
+| Day range selector with clear visual states | `src/hooks/useCalendar.ts`, `src/lib/dateUtils.ts`, `src/components/Calendar/DayCell.tsx` |
+| Integrated notes section (month/day/range) | `src/components/Notes/NotesPanel.tsx`, `src/components/Notes/NoteEditor.tsx`, `src/hooks/useNotes.ts` |
+| Fully responsive layout (desktop + mobile) | `src/components/Layout/WallCalendar.tsx`, `src/app/globals.css` |
+| Strictly frontend; local persistence only | `src/hooks/useNotes.ts` (`localStorage`) |
+
+Quality additions included:
+- Accessibility live announcements for range selection and save errors
+- Save-failure UI feedback when storage is unavailable/full
+- Error boundary fallback to avoid full-page crashes
+- Hero image visual fallback if remote image load fails
+
+---
+
 ## 🗂 Project Structure
 
 ```
